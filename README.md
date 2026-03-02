@@ -7,7 +7,7 @@ CSC 667 Term Project — Spring 2026
 | Name | GitHub | Email |
 |------|--------|-------|
 | Jordan Westover | jwestover-123 | jwestover@sfsu.edu |
-| Member 2 | @username | email@sfsu.edu |
+| Issac Abraham | Issac-Abraham | iabraham@sfsu.edu |
 | Mohammad Massoud Homayoun | Massoud786 | mhomayoun@sfsu.edu |
 | Member 4 | @username | email@sfsu.edu |
 
