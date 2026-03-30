@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import db from "./db/connection.js";
+import ensureAuthTables from "./db/initAuthTables.js";
 import homeRoutes from "./routes/home.js";
 import loggingMiddleware from "./middleware/logging.js";
 import testDataRoutes from "./routes/testData.js";
@@ -12,10 +13,18 @@ import authRoutes from "./routes/auth.js";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (!sessionSecret) {
+  throw new Error("SESSION_SECRET is required but was not found in environment.");
+}
 
 const PgSession = connectPgSimple(session);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "..", "views"));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -26,7 +35,7 @@ app.use(
       conString: process.env.DATABASE_URL,
       tableName: "session",
     }),
-    secret: process.env.SESSION_SECRET || "dev_secret_change_me",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -39,6 +48,11 @@ app.use(
 
 app.use(express.static(path.join(__dirname, "..", "public")));
 
+app.use((request, response, next) => {
+  response.locals.currentUserId = request.session.userId;
+  next();
+});
+
 app.use(loggingMiddleware);
 
 app.use("/", homeRoutes);
@@ -49,6 +63,7 @@ const startServer = async (): Promise<void> => {
   try {
     const result = await db.one<{ now: Date }>("SELECT NOW() AS now;");
     console.log(`Database connected. Server time is ${result.now.toISOString()}.`);
+    await ensureAuthTables();
 
     app.listen(PORT, () => {
       console.log(`Server started on port ${String(PORT)} at ${new Date().toLocaleTimeString()}`);

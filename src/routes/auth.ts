@@ -18,8 +18,40 @@ interface LoginUserRow {
   password_hash: string;
 }
 
+interface AuthPageModel {
+  title: string;
+  error?: string;
+  email?: string;
+}
+
 const router = Router();
 const SALT_ROUNDS = 10;
+
+router.get("/register", (request: Request, response: Response) => {
+  if (request.session.userId) {
+    response.redirect("/lobby");
+    return;
+  }
+
+  response.render("auth/register", {
+    title: "Register",
+    error: undefined,
+    email: "",
+  } satisfies AuthPageModel);
+});
+
+router.get("/login", (request: Request, response: Response) => {
+  if (request.session.userId) {
+    response.redirect("/lobby");
+    return;
+  }
+
+  response.render("auth/login", {
+    title: "Login",
+    error: undefined,
+    email: "",
+  } satisfies AuthPageModel);
+});
 
 router.post("/register", async (request: Request, response: Response) => {
   const { email, password } = request.body as {
@@ -27,15 +59,20 @@ router.post("/register", async (request: Request, response: Response) => {
     password?: unknown;
   };
 
+  const emailValue = typeof email === "string" ? email.trim() : "";
+
   if (
     typeof email !== "string" ||
     typeof password !== "string" ||
-    email.trim() === "" ||
+    emailValue === "" ||
     password.length < 6
   ) {
-    return response.status(400).json({
+    response.status(400).render("auth/register", {
+      title: "Register",
       error: "Valid email and password required (min 6 chars).",
-    });
+      email: emailValue,
+    } satisfies AuthPageModel);
+    return;
   }
 
   try {
@@ -48,7 +85,12 @@ router.post("/register", async (request: Request, response: Response) => {
     );
 
     if (existingUser) {
-      return response.status(409).json({ error: "User already exists." });
+      response.status(409).render("auth/register", {
+        title: "Register",
+        error: "User already exists.",
+        email: normalizedEmail,
+      } satisfies AuthPageModel);
+      return;
     }
 
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -61,13 +103,13 @@ router.post("/register", async (request: Request, response: Response) => {
     );
 
     request.session.userId = user.id;
-
-    return response.status(201).json({
-      message: "Registered successfully",
-      user,
-    });
+    response.redirect("/lobby");
   } catch {
-    return response.status(500).json({ error: "Server error" });
+    response.status(500).render("auth/register", {
+      title: "Register",
+      error: "Server error. Please try again.",
+      email: emailValue,
+    } satisfies AuthPageModel);
   }
 });
 
@@ -76,14 +118,20 @@ router.post("/login", async (request: Request, response: Response) => {
     email?: unknown;
     password?: unknown;
   };
+  const emailValue = typeof email === "string" ? email.trim() : "";
 
   if (
     typeof email !== "string" ||
     typeof password !== "string" ||
-    email.trim() === "" ||
+    emailValue === "" ||
     password.trim() === ""
   ) {
-    return response.status(400).json({ error: "Invalid input" });
+    response.status(400).render("auth/login", {
+      title: "Login",
+      error: "Invalid input",
+      email: emailValue,
+    } satisfies AuthPageModel);
+    return;
   }
 
   try {
@@ -95,31 +143,40 @@ router.post("/login", async (request: Request, response: Response) => {
     const invalidMsg = "Invalid email or password";
 
     if (!user) {
-      return response.status(401).json({ error: invalidMsg });
+      response.status(401).render("auth/login", {
+        title: "Login",
+        error: invalidMsg,
+        email: emailValue,
+      } satisfies AuthPageModel);
+      return;
     }
 
     const match = await bcrypt.compare(password, user.password_hash);
 
     if (!match) {
-      return response.status(401).json({ error: invalidMsg });
+      response.status(401).render("auth/login", {
+        title: "Login",
+        error: invalidMsg,
+        email: emailValue,
+      } satisfies AuthPageModel);
+      return;
     }
 
     request.session.userId = user.id;
-
-    return response.json({ message: "Login successful" });
+    response.redirect("/lobby");
   } catch {
-    return response.status(500).json({ error: "Server error" });
+    response.status(500).render("auth/login", {
+      title: "Login",
+      error: "Server error. Please try again.",
+      email: emailValue,
+    } satisfies AuthPageModel);
   }
 });
 
 router.post("/logout", (request: Request, response: Response) => {
-  request.session.destroy((error) => {
-    if (error) {
-      return response.status(500).json({ error: "Failed to log out" });
-    }
-
+  request.session.destroy((_error) => {
     response.clearCookie("connect.sid");
-    return response.json({ message: "Logged out" });
+    response.redirect("/auth/login");
   });
 });
 

@@ -1,0 +1,22 @@
+<%- include("../partials/header", { title, currentUserId }) %>
+
+<h1>Create Account</h1>
+<p>Register with your email and password.</p>
+
+<% if (error) { %>
+  <p class="error-msg"><%= error %></p>
+<% } %>
+
+<form action="/auth/register" method="POST" class="auth-form">
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" required value="<%= email || '' %>" />
+
+  <label for="password">Password</label>
+  <input id="password" name="password" type="password" minlength="6" required />
+
+  <button type="submit">Register</button>
+</form>
+
+<p class="switch-link">Already have an account? <a href="/auth/login">Log in</a>.</p>
+
+<%- include("../partials/footer") %>

@@ -1,1 +1,93 @@
-body {background-color: aquamarine;}
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f1f5f9;
+  color: #111827;
+}
+
+.app-shell {
+  max-width: 680px;
+  margin: 2rem auto;
+  background: #ffffff;
+  padding: 1.25rem 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.top-nav {
+  display: flex;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+  align-items: center;
+}
+
+a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.inline-form {
+  display: inline;
+}
+
+h1 {
+  margin-top: 0.2rem;
+  margin-bottom: 0.55rem;
+}
+
+.muted-text {
+  color: #4b5563;
+  margin-top: 0;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+label {
+  font-weight: 600;
+}
+
+input {
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.96rem;
+}
+
+button {
+  width: fit-content;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #94a3b8;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #e2e8f0;
+}
+
+.error-msg {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  font-weight: 600;
+}
+
+.switch-link {
+  margin-top: 1rem;
+}
+
+.info-list {
+  line-height: 1.65;
+  padding-left: 1.2rem;
+}
