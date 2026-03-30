@@ -1,0 +1,48 @@
+<%
+  // Build Gravatar URL from email using MD5 (passed from the route)
+  const gravatarUrl = typeof gravatarHash !== 'undefined'
+    ? `https://www.gravatar.com/avatar/${gravatarHash}?s=128&d=identicon`
+    : `https://www.gravatar.com/avatar/00000000000000000000000000000000?s=128&d=identicon`;
+
+  const username = user.email.split('@')[0];
+%>
+
+<div class="page-header animate-in">
+  <p class="eyebrow">Authenticated &mdash; Lobby</p>
+  <h1>Good to see you<% if (username) { %>, <%= username %><% } %>.</h1>
+  <p class="sub">You have successfully signed in to Spades.</p>
+</div>
+
+<div class="user-card animate-in">
+  <img
+    src="<%= gravatarUrl %>"
+    alt="Avatar for <%= user.email %>"
+    class="avatar"
+    width="64"
+    height="64"
+  />
+  <div class="user-info">
+    <p class="name"><%= username %></p>
+    <p class="email"><%= user.email %></p>
+    <span class="badge">Member</span>
+  </div>
+</div>
+
+<p class="section-label animate-in">Session details</p>
+
+<div class="stat-grid animate-in">
+  <div class="stat-box">
+    <p class="stat-label">User ID</p>
+    <p class="stat-value">#<%= user.id %></p>
+  </div>
+  <div class="stat-box">
+    <p class="stat-label">Status</p>
+    <p class="stat-value" style="font-size:1rem;color:#4a7c59;">Active</p>
+  </div>
+</div>
+
+<div style="margin-top:2.5rem;" class="animate-in">
+  <form action="/auth/logout" method="POST" style="display:inline;">
+    <button type="submit" class="btn btn-ghost">Sign out</button>
+  </form>
+</div>

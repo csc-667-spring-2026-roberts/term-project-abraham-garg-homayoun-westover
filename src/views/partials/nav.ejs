@@ -1,0 +1,16 @@
+<nav>
+  <a href="/" class="wordmark">SPADES</a>
+  <ul class="nav-links">
+    <% if (typeof user !== 'undefined' && user) { %>
+      <li><a href="/lobby">Lobby</a></li>
+      <li>
+        <form action="/auth/logout" method="POST" style="display:inline;">
+          <button type="submit" style="background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.7rem;font-weight:400;text-transform:uppercase;letter-spacing:0.12em;color:var(--mist);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--mist)'">Log Out</button>
+        </form>
+      </li>
+    <% } else { %>
+      <li><a href="/auth/login">Sign In</a></li>
+      <li><a href="/auth/register">Register</a></li>
+    <% } %>
+  </ul>
+</nav>

@@ -1,7 +1,9 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import db from "../db/connection.js";
+import requireAuth from "../middleware/requireAuth.js";
 
 interface ExistingUserRow {
   id: number;
@@ -18,10 +20,29 @@ interface LoginUserRow {
   password_hash: string;
 }
 
+interface LobbyUserRow {
+  id: number;
+  email: string;
+}
+
 const router = Router();
 const SALT_ROUNDS = 10;
 
-router.post("/register", async (request: Request, response: Response) => {
+function md5(value: string): string {
+  return crypto.createHash("md5").update(value.trim().toLowerCase()).digest("hex");
+}
+
+// ── GET /auth/register ──────────────────────────────────────────────────────
+router.get("/register", (request: Request, response: Response): void => {
+  if (request.session.userId) {
+    response.redirect("/lobby");
+    return;
+  }
+  response.render("register", { title: "Register", user: null });
+});
+
+// ── POST /auth/register ─────────────────────────────────────────────────────
+router.post("/register", async (request: Request, response: Response): Promise<void> => {
   const { email, password } = request.body as {
     email?: unknown;
     password?: unknown;
@@ -33,9 +54,13 @@ router.post("/register", async (request: Request, response: Response) => {
     email.trim() === "" ||
     password.length < 6
   ) {
-    return response.status(400).json({
-      error: "Valid email and password required (min 6 chars).",
+    response.render("register", {
+      title: "Register",
+      user: null,
+      error: "A valid email and a password of at least 6 characters are required.",
+      formData: { email: typeof email === "string" ? email : "" },
     });
+    return;
   }
 
   try {
@@ -48,7 +73,13 @@ router.post("/register", async (request: Request, response: Response) => {
     );
 
     if (existingUser) {
-      return response.status(409).json({ error: "User already exists." });
+      response.render("register", {
+        title: "Register",
+        user: null,
+        error: "An account with that email already exists.",
+        formData: { email: normalizedEmail },
+      });
+      return;
     }
 
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -61,17 +92,27 @@ router.post("/register", async (request: Request, response: Response) => {
     );
 
     request.session.userId = user.id;
-
-    return response.status(201).json({
-      message: "Registered successfully",
-      user,
-    });
+    response.redirect("/lobby");
   } catch {
-    return response.status(500).json({ error: "Server error" });
+    response.render("register", {
+      title: "Register",
+      user: null,
+      error: "Something went wrong on our end. Please try again.",
+    });
   }
 });
 
-router.post("/login", async (request: Request, response: Response) => {
+// ── GET /auth/login ──────────────────────────────────────────────────────────
+router.get("/login", (request: Request, response: Response): void => {
+  if (request.session.userId) {
+    response.redirect("/lobby");
+    return;
+  }
+  response.render("login", { title: "Sign In", user: null });
+});
+
+// ── POST /auth/login ─────────────────────────────────────────────────────────
+router.post("/login", async (request: Request, response: Response): Promise<void> => {
   const { email, password } = request.body as {
     email?: unknown;
     password?: unknown;
@@ -83,7 +124,13 @@ router.post("/login", async (request: Request, response: Response) => {
     email.trim() === "" ||
     password.trim() === ""
   ) {
-    return response.status(400).json({ error: "Invalid input" });
+    response.render("login", {
+      title: "Sign In",
+      user: null,
+      error: "Please enter your email and password.",
+      formData: { email: typeof email === "string" ? email : "" },
+    });
+    return;
   }
 
   try {
@@ -92,35 +139,62 @@ router.post("/login", async (request: Request, response: Response) => {
       [email.toLowerCase().trim()],
     );
 
-    const invalidMsg = "Invalid email or password";
-
-    if (!user) {
-      return response.status(401).json({ error: invalidMsg });
-    }
-
-    const match = await bcrypt.compare(password, user.password_hash);
-
-    if (!match) {
-      return response.status(401).json({ error: invalidMsg });
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      response.render("login", {
+        title: "Sign In",
+        user: null,
+        error: "Invalid email or password.",
+        formData: { email: email.toLowerCase().trim() },
+      });
+      return;
     }
 
     request.session.userId = user.id;
-
-    return response.json({ message: "Login successful" });
+    response.redirect("/lobby");
   } catch {
-    return response.status(500).json({ error: "Server error" });
+    response.render("login", {
+      title: "Sign In",
+      user: null,
+      error: "Something went wrong on our end. Please try again.",
+    });
   }
 });
 
-router.post("/logout", (request: Request, response: Response) => {
+// ── POST /auth/logout ────────────────────────────────────────────────────────
+router.post("/logout", (request: Request, response: Response): void => {
   request.session.destroy((error) => {
     if (error) {
-      return response.status(500).json({ error: "Failed to log out" });
+      response.redirect("/lobby");
+      return;
+    }
+    response.clearCookie("connect.sid");
+    response.redirect("/auth/login");
+  });
+});
+
+// ── GET /lobby ───────────────────────────────────────────────────────────────
+router.get("/lobby", requireAuth, async (request: Request, response: Response): Promise<void> => {
+  try {
+    const user = await db.oneOrNone<LobbyUserRow>("SELECT id, email FROM users WHERE id = $1", [
+      request.session.userId,
+    ]);
+
+    if (!user) {
+      request.session.destroy(() => {
+        /* ignore */
+      });
+      response.redirect("/auth/login");
+      return;
     }
 
-    response.clearCookie("connect.sid");
-    return response.json({ message: "Logged out" });
-  });
+    response.render("lobby", {
+      title: "Lobby",
+      user,
+      gravatarHash: md5(user.email),
+    });
+  } catch {
+    response.redirect("/auth/login");
+  }
 });
 
 export default router;

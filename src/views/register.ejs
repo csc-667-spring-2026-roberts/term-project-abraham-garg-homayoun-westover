@@ -1,0 +1,45 @@
+<div class="centered-page">
+  <div class="card animate-in">
+    <h1 class="card-title">Create account</h1>
+    <p class="card-subtitle">Join to access the lobby</p>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="flash error">
+        <span>&#9651;</span>
+        <span><%= error %></span>
+      </div>
+    <% } %>
+
+    <form action="/auth/register" method="POST" novalidate>
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>"
+          autocomplete="email"
+          required
+          autofocus
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password <span style="font-size:0.6rem;color:var(--mist)">(min 6 chars)</span></label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          autocomplete="new-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary">Create account</button>
+    </form>
+
+    <p class="form-divider">
+      Already have an account? <a href="/auth/login">Sign in</a>
+    </p>
+  </div>
+</div>
