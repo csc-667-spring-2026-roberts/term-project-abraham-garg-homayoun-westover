@@ -12,6 +12,7 @@ import livereload from "livereload";
 import connectLivereload from "connect-livereload";
 import connectPgSimple from "connect-pg-simple";
 import authRoutes from "./routes/auth.js";
+import gameRoutes from "./routes/gameRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -70,6 +71,7 @@ app.use(loggingMiddleware);
 
 app.use("/", homeRoutes);
 app.use("/api", testDataRoutes);
+app.use("/api", gameRoutes);
 app.use("/auth", authRoutes);
 
 const startServer = async (): Promise<void> => {

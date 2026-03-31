@@ -1,7 +1,7 @@
 {
   "version": 3,
-  "sources": [],
-  "sourcesContent": [],
-  "mappings": "",
+  "sources": ["../../src/client/lobby.ts"],
+  "sourcesContent": ["const button = document.getElementById(\"loadBtn\") as HTMLButtonElement | null;\r\nconst container = document.getElementById(\"container\") as HTMLElement | null;\r\nconst template = document.getElementById(\"itemTemplate\") as HTMLTemplateElement | null;\r\n\r\nif (!button || !container || !template) {\r\n  throw new Error(\"Required DOM elements not found\");\r\n}\r\n\r\nbutton.addEventListener(\"click\", () => {\r\n  void (async (): Promise<void> => {\r\n    const res = await fetch(\"/api/games\", {\r\n      method: \"POST\",\r\n    });\r\n\r\n    const game = (await res.json()) as { id: number };\r\n\r\n    console.log(\"Created game:\", game);\r\n\r\n    const clone = template.content.cloneNode(true) as HTMLElement;\r\n\r\n    const nameEl = clone.querySelector(\".name\");\r\n    if (nameEl) {\r\n      nameEl.textContent = `Game ID: ${String(game.id)}`;\r\n    }\r\n\r\n    container.appendChild(clone);\r\n  })();\r\n});"],
+  "mappings": ";;;AAAA,MAAM,SAAS,SAAS,eAAe,SAAS;AAChD,MAAM,YAAY,SAAS,eAAe,WAAW;AACrD,MAAM,WAAW,SAAS,eAAe,cAAc;AAEvD,MAAI,CAAC,UAAU,CAAC,aAAa,CAAC,UAAU;AACtC,UAAM,IAAI,MAAM,iCAAiC;AAAA,EACnD;AAEA,SAAO,iBAAiB,SAAS,MAAM;AACrC,UAAM,YAA2B;AAC/B,YAAM,MAAM,MAAM,MAAM,cAAc;AAAA,QACpC,QAAQ;AAAA,MACV,CAAC;AAED,YAAM,OAAQ,MAAM,IAAI,KAAK;AAE7B,cAAQ,IAAI,iBAAiB,IAAI;AAEjC,YAAM,QAAQ,SAAS,QAAQ,UAAU,IAAI;AAE7C,YAAM,SAAS,MAAM,cAAc,OAAO;AAC1C,UAAI,QAAQ;AACV,eAAO,cAAc,YAAY,OAAO,KAAK,EAAE,CAAC;AAAA,MAClD;AAEA,gBAAU,YAAY,KAAK;AAAA,IAC7B,GAAG;AAAA,EACL,CAAC;",
   "names": []
 }
