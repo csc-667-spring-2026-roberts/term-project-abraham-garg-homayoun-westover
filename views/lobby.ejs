@@ -23,5 +23,12 @@
 </template>
 
 <div id="container"></div>
+<script>
+  const source = new EventSource("/api/sse?roomId=global");
+
+  source.addEventListener("state-update", (event) => {
+    console.log(JSON.parse(event.data));
+  });
+</script>
 
 <%- include("partials/footer") %>

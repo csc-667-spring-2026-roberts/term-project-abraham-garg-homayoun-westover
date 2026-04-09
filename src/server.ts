@@ -13,6 +13,8 @@ import connectLivereload from "connect-livereload";
 import connectPgSimple from "connect-pg-simple";
 import authRoutes from "./routes/auth.js";
 import gameRoutes from "./routes/gameRoutes.js";
+import sseRoutes from "./routes/sse.js";
+import broadcastTestRoutes from "./routes/broadcastTest.js";
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -42,6 +44,8 @@ app.set("views", path.join(__dirname, "..", "views"));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/api", sseRoutes);
+app.use("/api", broadcastTestRoutes);
 
 app.use(
   session({

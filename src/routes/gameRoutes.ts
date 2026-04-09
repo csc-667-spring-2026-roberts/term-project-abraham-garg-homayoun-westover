@@ -1,5 +1,6 @@
 import express from "express";
 import db from "../db/connection.js";
+import { broadcastToRoom } from "../lib/sseBroker.js";
 
 interface GameRow {
   id: number;
@@ -17,14 +18,25 @@ router.post("/games", async (req, res) => {
     return;
   }
 
-  const game = await db.one<GameRow>(
-    `INSERT INTO games (host_user_id)
-     VALUES ($1)
-     RETURNING *`,
-    [userId],
-  );
+  try {
+    const game = await db.one<GameRow>(
+      `INSERT INTO games (host_user_id)
+       VALUES ($1)
+       RETURNING *`,
+      [userId],
+    );
 
-  return res.json(game);
+    broadcastToRoom(String(game.id), "state-update", {
+      gameId: game.id,
+      type: "game_created",
+      game,
+    });
+
+    return res.json(game);
+  } catch (error) {
+    console.error("Failed to create game:", error);
+    return res.status(500).json({ error: "Failed to create game" });
+  }
 });
 
 export default router;
