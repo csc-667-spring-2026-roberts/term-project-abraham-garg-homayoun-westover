@@ -12,14 +12,16 @@
     "dev": "concurrently -n server,client -c blue,green \"tsx watch src/server.ts\" \"npm run dev:client\"",
     "dev:server": "tsx watch src/server.ts",
     "dev:client": "esbuild src/client/*.ts --bundle --outdir=public/js --sourcemap --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "clean": "rm -rf dist/",
     "prepare": "husky",
     "migrate": "node-pg-migrate up -j ts",
-    "migrate:down": "node-pg-migrate down -j ts"
+    "migrate:down": "node-pg-migrate down -j ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "lint-staged": {
     "src/**/*.ts": [
@@ -48,7 +50,8 @@
     "prettier": "^3.2.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.5"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

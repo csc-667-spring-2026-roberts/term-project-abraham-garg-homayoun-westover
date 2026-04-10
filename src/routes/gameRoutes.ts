@@ -26,11 +26,14 @@ router.post("/games", async (req, res) => {
       [userId],
     );
 
-    broadcastToRoom(String(game.id), "state-update", {
+    const payload = {
       gameId: game.id,
-      type: "game_created",
+      type: "game_created" as const,
       game,
-    });
+    };
+
+    broadcastToRoom(String(game.id), "state-update", payload);
+    broadcastToRoom("global", "state-update", payload);
 
     return res.json(game);
   } catch (error) {

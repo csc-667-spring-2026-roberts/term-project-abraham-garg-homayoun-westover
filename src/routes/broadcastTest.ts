@@ -4,8 +4,11 @@ import { broadcastToRoom } from "../lib/sseBroker.js";
 
 const router = Router();
 
-router.post("/broadcast-test", (_request: Request, response: Response) => {
-  broadcastToRoom("global", "state-update", {
+router.post("/broadcast-test", (request: Request, response: Response): void => {
+  const body = request.body as { roomId?: unknown } | undefined;
+  const roomId = typeof body?.roomId === "string" ? body.roomId : "global";
+
+  broadcastToRoom(roomId, "state-update", {
     message: "Test event from server",
     at: new Date().toISOString(),
   });

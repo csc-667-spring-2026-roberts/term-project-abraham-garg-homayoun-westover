@@ -7,7 +7,7 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: ["./tsconfig.json", "./tsconfig.eslint.json"],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -38,5 +38,5 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-member-access": "warn",
     },
   },
-  { ignores: ["dist/", "node_modules/", "*.js"] }
+  { ignores: ["dist/", "node_modules/", "*.js", "tests/**/*.js"] }
 );

@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 dist/
+/vitest.config.js
+/vitest.config.js.map
 
 # IDE
 .idea/
