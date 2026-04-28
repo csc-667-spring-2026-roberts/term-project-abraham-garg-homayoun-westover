@@ -2,8 +2,10 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import db from "./db/connection.js";
+import db, { pgConnectionOptions } from "./db/connection.js";
+import { KEEPALIVE_INTERVAL_MS } from "./lib/timing.js";
 import ensureAuthTables from "./db/initAuthTables.js";
+import { runMigrations } from "./db/runMigrations.js";
 import homeRoutes from "./routes/home.js";
 import loggingMiddleware from "./middleware/logging.js";
 import testDataRoutes from "./routes/testData.js";
@@ -17,6 +19,9 @@ import sseRoutes from "./routes/sse.js";
 import broadcastTestRoutes from "./routes/broadcastTest.js";
 
 const app = express();
+
+app.set("trust proxy", 1);
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 const sessionSecret = process.env.SESSION_SECRET;
 
@@ -50,7 +55,7 @@ app.use("/api", broadcastTestRoutes);
 app.use(
   session({
     store: new PgSession({
-      conString: process.env.DATABASE_URL,
+      conObject: pgConnectionOptions,
       tableName: "session",
     }),
     secret: sessionSecret,
@@ -80,9 +85,18 @@ app.use("/auth", authRoutes);
 
 const startServer = async (): Promise<void> => {
   try {
+    await runMigrations();
     const result = await db.one<{ now: Date }>("SELECT NOW() AS now;");
     console.log(`Database connected. Server time is ${result.now.toISOString()}.`);
     await ensureAuthTables();
+
+    setInterval(() => {
+      void db.result("SELECT 1").catch((error: unknown) => {
+        const message =
+          error instanceof Error ? error.message : "Unknown database keep-alive error.";
+        console.error(`Database keep-alive ping failed: ${message}`);
+      });
+    }, KEEPALIVE_INTERVAL_MS);
 
     app.listen(PORT, () => {
       console.log(`Server started on port ${String(PORT)} at ${new Date().toLocaleTimeString()}`);

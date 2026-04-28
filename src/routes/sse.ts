@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import crypto from "crypto";
+import { KEEPALIVE_INTERVAL_MS } from "../lib/timing.js";
 import { addClient, removeClient } from "../lib/sseBroker.js";
 
 const router = Router();
@@ -21,12 +22,12 @@ router.get("/sse", (request: Request, response: Response): void => {
 
   response.write(`event: connected\ndata: ${JSON.stringify({ clientId, roomId })}\n\n`);
 
-  const heartbeat = setInterval(() => {
-    response.write(`: heartbeat\n\n`);
-  }, 25000);
+  const ping = setInterval(() => {
+    response.write(`: ping\n\n`);
+  }, KEEPALIVE_INTERVAL_MS);
 
   request.on("close", () => {
-    clearInterval(heartbeat);
+    clearInterval(ping);
     removeClient(roomId, clientId);
     response.end();
   });

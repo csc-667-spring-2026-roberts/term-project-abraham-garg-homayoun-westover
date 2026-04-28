@@ -18,8 +18,8 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "clean": "rm -rf dist/",
     "prepare": "husky",
-    "migrate": "node-pg-migrate up -j ts",
-    "migrate:down": "node-pg-migrate down -j ts",
+    "migrate": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
     "test": "vitest run",
     "test:watch": "vitest"
   },
