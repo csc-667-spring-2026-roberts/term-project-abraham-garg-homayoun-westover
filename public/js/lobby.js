@@ -33,6 +33,11 @@
     }
   };
   if (button && container && template) {
+    void fetch("/api/games").then((r) => r.json()).then((games) => {
+      for (const game of games) {
+        store.appendGameFromServer(game.id);
+      }
+    });
     const source = new EventSource("/api/sse?roomId=global");
     source.addEventListener("state-update", (event) => {
       try {

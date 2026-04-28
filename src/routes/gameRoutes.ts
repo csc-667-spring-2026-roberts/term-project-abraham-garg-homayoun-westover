@@ -33,6 +33,28 @@ interface CardRow {
   played_at: Date | null;
 }
 
+router.get("/games", async (req, res) => {
+  if (!req.session.userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const games = await db.any<GameRow & { player_count: number }>(
+      `SELECT g.*, COUNT(gp.user_id)::int AS player_count
+       FROM games g
+       LEFT JOIN game_players gp ON gp.game_id = g.id
+       WHERE g.status = 'waiting'
+       GROUP BY g.id
+       ORDER BY g.created_at DESC`,
+    );
+    return res.json(games);
+  } catch (error) {
+    console.error("Failed to fetch games:", error);
+    return res.status(500).json({ error: "Failed to fetch games" });
+  }
+});
+
 router.post("/games", async (req, res) => {
   const userId = req.session.userId;
   if (!userId) {
