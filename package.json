@@ -9,7 +9,7 @@
     "build:server": "tsc",
     "build:client": "esbuild src/client/*.ts --bundle --outdir=public/js --sourcemap",
     "start": "node dist/server.js",
-    "dev": "concurrently -n server,client -c blue,green \"tsx watch src/server.ts\" \"npm run dev:client\"",
+    "dev": "concurrently --raw -n server,client -c blue,green \"tsx watch src/server.ts\" \"npm run dev:client\"",
     "dev:server": "tsx watch src/server.ts",
     "dev:client": "esbuild src/client/*.ts --bundle --outdir=public/js --sourcemap --watch",
     "lint": "eslint src/ tests/",

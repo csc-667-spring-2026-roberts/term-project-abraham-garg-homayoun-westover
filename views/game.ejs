@@ -1,0 +1,140 @@
+<%- include("partials/header", { title, currentUserId }) %>
+
+<h1>Spades — Game #<%= gameId %></h1>
+
+<section id="game-status">
+  <p id="status-text">Loading game...</p>
+</section>
+
+<section id="players-section">
+  <h2>Players</h2>
+  <ul id="players-list"></ul>
+</section>
+
+<section id="waiting-controls" style="display:none">
+  <button id="startBtn">Start Game</button>
+</section>
+
+<section id="hand-section" style="display:none">
+  <h2>Your Hand</h2>
+  <div id="hand"></div>
+</section>
+
+<section id="played-section">
+  <h2>Played Cards</h2>
+  <ul id="played-list"></ul>
+</section>
+
+<p id="game-message"></p>
+
+<script>
+  const GAME_ID = <%= gameId %>;
+  const MY_USER_ID = <%= user.id %>;
+
+  function setMessage(msg) {
+    document.getElementById("game-message").textContent = msg;
+  }
+
+  function renderPlayers(players, currentPlayerId) {
+    const list = document.getElementById("players-list");
+    list.innerHTML = "";
+    players.forEach(function(p) {
+      const li = document.createElement("li");
+      const marker = p.user_id === currentPlayerId ? " ◀ your turn" : "";
+      li.textContent = `${p.username} (seat ${p.seat_position}, team ${p.team_number})${marker}`;
+      list.appendChild(li);
+    });
+  }
+
+  function renderHand(cards, isMyTurn) {
+    const hand = document.getElementById("hand");
+    hand.innerHTML = "";
+    if (cards.length === 0) {
+      hand.textContent = "No cards remaining.";
+      return;
+    }
+    cards.forEach(function(card) {
+      const btn = document.createElement("button");
+      btn.textContent = `${card.rank} of ${card.suit}`;
+      btn.dataset.cardId = card.id;
+      btn.disabled = !isMyTurn;
+      btn.addEventListener("click", function() {
+        playCard(card.id);
+      });
+      hand.appendChild(btn);
+    });
+  }
+
+  function renderPlayedCards(playedCards) {
+    const list = document.getElementById("played-list");
+    list.innerHTML = "";
+    playedCards.forEach(function(card) {
+      const li = document.createElement("li");
+      li.textContent = `${card.rank} of ${card.suit}`;
+      list.appendChild(li);
+    });
+  }
+
+  async function loadState() {
+    const res = await fetch(`/api/games/${GAME_ID}/state`);
+    if (!res.ok) { setMessage("Failed to load game state."); return; }
+    const data = await res.json();
+    const { game, players, myCards, playedCards } = data;
+
+    document.getElementById("status-text").textContent = `Status: ${game.status}`;
+    renderPlayers(players, game.current_player_id);
+    renderPlayedCards(playedCards);
+
+    if (game.status === "waiting") {
+      document.getElementById("waiting-controls").style.display = "block";
+      document.getElementById("hand-section").style.display = "none";
+    } else {
+      document.getElementById("waiting-controls").style.display = "none";
+      document.getElementById("hand-section").style.display = "block";
+      const isMyTurn = game.current_player_id === MY_USER_ID;
+      renderHand(myCards, isMyTurn);
+      if (isMyTurn) {
+        setMessage("It's your turn! Play a card.");
+      } else {
+        setMessage("Waiting for another player...");
+      }
+    }
+  }
+
+  async function playCard(cardId) {
+    const res = await fetch(`/api/games/${GAME_ID}/play`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      setMessage(err.error || "Failed to play card.");
+    } else {
+      setMessage("");
+    }
+  }
+
+  document.getElementById("startBtn").addEventListener("click", async function() {
+    const res = await fetch(`/api/games/${GAME_ID}/start`, { method: "POST" });
+    if (!res.ok) {
+      const err = await res.json();
+      setMessage(err.error || "Failed to start game.");
+    }
+  });
+
+  const source = new EventSource(`/api/sse?roomId=${GAME_ID}`);
+
+  source.addEventListener("state-update", function(event) {
+    let data;
+    try { data = JSON.parse(event.data); } catch { return; }
+
+    if (data.type === "player_joined" || data.type === "game_started" || data.type === "card_played") {
+      loadState();
+    }
+  });
+
+  loadState();
+</script>
+
+<%- include("partials/footer") %>

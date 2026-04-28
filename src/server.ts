@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 
 import db, { pgConnectionOptions } from "./db/connection.js";
 import { KEEPALIVE_INTERVAL_MS } from "./lib/timing.js";
-import ensureAuthTables from "./db/initAuthTables.js";
+//import ensureAuthTables from "./db/initAuthTables.js";
 import { runMigrations } from "./db/runMigrations.js";
 import homeRoutes from "./routes/home.js";
 import loggingMiddleware from "./middleware/logging.js";
@@ -88,7 +88,7 @@ const startServer = async (): Promise<void> => {
     await runMigrations();
     const result = await db.one<{ now: Date }>("SELECT NOW() AS now;");
     console.log(`Database connected. Server time is ${result.now.toISOString()}.`);
-    await ensureAuthTables();
+    //await ensureAuthTables();
 
     setInterval(() => {
       void db.result("SELECT 1").catch((error: unknown) => {

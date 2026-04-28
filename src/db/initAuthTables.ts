@@ -27,19 +27,9 @@ const createSessionExpireIndexSql = `
   CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
 `;
 
-const createGamesTableSql = `
-  CREATE TABLE IF NOT EXISTS games (
-    id SERIAL PRIMARY KEY,
-    host_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'waiting',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  );
-`;
-
 const ensureAuthTables = async (): Promise<void> => {
   await db.none(createUsersTableSql);
   await db.none(createSessionTableSql);
-  await db.none(createGamesTableSql);
 
   try {
     await db.none(addSessionPrimaryKeySql);

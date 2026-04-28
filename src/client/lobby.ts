@@ -16,7 +16,14 @@ const store = {
     const clone = template.content.cloneNode(true) as HTMLElement;
     const nameEl = clone.querySelector(".name");
     if (nameEl) {
-      nameEl.textContent = `Game ID: ${String(gameId)}`;
+      const btn = document.createElement("button");
+      btn.textContent = `Game #${String(gameId)} — Join`;
+      btn.addEventListener("click", () => {
+        void fetch(`/api/games/${String(gameId)}/join`, { method: "POST" }).then(() => {
+          window.location.href = `/game/${String(gameId)}`;
+        });
+      });
+      nameEl.appendChild(btn);
     }
     const root = clone.firstElementChild as HTMLElement | null;
     if (root) {
@@ -55,13 +62,12 @@ if (button && container && template) {
         method: "POST",
       });
 
-      const game = (await res.json()) as { id: number };
-
       if (!res.ok) {
         return;
       }
 
-      store.appendGameFromServer(game.id);
+      const game = (await res.json()) as { id: number };
+      window.location.href = `/game/${String(game.id)}`;
     })();
   });
 }
