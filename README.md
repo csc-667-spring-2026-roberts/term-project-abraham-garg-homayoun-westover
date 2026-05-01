@@ -9,7 +9,7 @@ CSC 667 Term Project — Spring 2026
 | Jordan Westover | jwestover-123 | jwestover@sfsu.edu |
 | Issac Abraham | Issac-Abraham | iabraham@sfsu.edu |
 | Mohammad Massoud Homayoun | Massoud786 | mhomayoun@sfsu.edu |
-| Member 4 | @username | email@sfsu.edu |
+| Shaurya Garg | sgarg923 | sgarg1@sfsu.edu |
 
 ## Setup
 
