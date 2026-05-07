@@ -407,7 +407,7 @@ async function playCardTxBody(
   gameId: number,
   userId: number,
   cardId: number,
-): Promise<void> {
+): Promise<unknown> {
   const game = await t.oneOrNone<GameRow>(`SELECT * FROM games WHERE id = $1 FOR UPDATE`, [gameId]);
   if (!game) return res.status(404).json({ error: "Game not found" });
   if (game.status !== "playing")
@@ -736,7 +736,7 @@ router.get("/games/:id/state", async (req, res) => {
     return;
   }
 
-  const gameId = parseInt(req.params.id, 10);
+  const gameId = parseInt(req.params["id"], 10);
 
   try {
     const state = await fetchGameState(gameId, userId);
