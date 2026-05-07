@@ -39,6 +39,7 @@ router.get("/lobby", requireAuth, async (request: Request, response: Response) =
     response.render("lobby", {
       title: "Lobby",
       user,
+      currentUserId: userId,
     });
   } catch {
     response.status(500).send("Failed to load lobby.");
@@ -70,7 +71,7 @@ router.get("/game/:id", requireAuth, async (request: Request, response: Response
       [userId],
     );
 
-    response.render("game", { title: "Game", user, gameId });
+    response.render("game", { title: "Game", user, gameId, currentUserId: userId });
   } catch {
     response.status(500).send("Failed to load game.");
   }
