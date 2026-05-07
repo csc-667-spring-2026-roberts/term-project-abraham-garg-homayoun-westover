@@ -710,7 +710,7 @@ async function playCardHandler(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const gameId = parseInt(req.params.id, 10);
+  const gameId = parseInt(req.params["id"] as string, 10);
   const { cardId } = req.body as { cardId: number };
 
   if (!cardId) {
@@ -736,7 +736,7 @@ router.get("/games/:id/state", async (req, res) => {
     return;
   }
 
-  const gameId = parseInt(req.params["id"], 10);
+  const gameId = parseInt(req.params.id, 10);
 
   try {
     const state = await fetchGameState(gameId, userId);
