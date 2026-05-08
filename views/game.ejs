@@ -1,54 +1,80 @@
 <%- include("partials/header", { title, currentUserId }) %>
 
-<h1>Spades — Game #<%= gameId %></h1>
+<div class="game-layout">
+  <section class="game-title">
+    <h1>Spades — Game #<%= gameId %></h1>
 
-<section id="game-status">
-  <p id="status-text">Loading game...</p>
-</section>
+    <section id="game-status">
+      <p id="status-text">Loading game...</p>
+    </section>
 
-<section id="players-section">
-  <h2>Players</h2>
-  <ul id="players-list"></ul>
-</section>
+    <section id="table-section" class="spades-table">
+      <div class="table-center">
+        <div class="table-message">
+          <strong>Spades Table</strong>
+          <span id="table-message-text">Waiting for game state...</span>
+        </div>
+      </div>
+      <div id="table-players"></div>
+    </section>
+  </section>
 
-<section id="waiting-controls" style="display:none">
-  <button id="startBtn">Start Game</button>
-</section>
+  <section id="players-section">
+    <h2>Players</h2>
+    <ul id="players-list"></ul>
+  </section>
 
-<section id="bidding-section" style="display:none">
-  <h2>Place Your Bid</h2>
-  <div id="bids-display"></div>
-  <div id="bid-controls" style="display:none">
-    <label for="bid-input">Your bid (0-13):</label>
-    <input type="number" id="bid-input" min="0" max="13" value="2">
-    <button id="bidBtn">Submit Bid</button>
+  <div class="game-main">
+    <section id="waiting-controls" style="display:none">
+      <h2>Waiting Room</h2>
+      <button id="startBtn">Start Game</button>
+    </section>
+
+    <section id="bidding-section" style="display:none">
+      <h2>Place Your Bid</h2>
+      <div id="bids-display"></div>
+
+      <div id="bid-controls" style="display:none">
+        <label for="bid-input">Your bid (0-13):</label>
+        <input type="number" id="bid-input" min="0" max="13" value="2">
+        <button id="bidBtn">Submit Bid</button>
+      </div>
+    </section>
+
+    <section id="trick-section" style="display:none">
+      <h2>Current Trick</h2>
+      <div id="current-trick"></div>
+    </section>
+
+    <section id="scores-section" style="display:none">
+      <h2>Scores</h2>
+      <div id="tricks-taken"></div>
+
+      <table id="scores-table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Team 1</th>
+            <th>Team 2</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
   </div>
-</section>
 
-<section id="trick-section" style="display:none">
-  <h2>Current Trick</h2>
-  <div id="current-trick"></div>
-</section>
+  <section id="hand-section" style="display:none">
+    <h2>Your Hand</h2>
+    <div id="hand"></div>
+  </section>
 
-<section id="hand-section" style="display:none">
-  <h2>Your Hand</h2>
-  <div id="hand"></div>
-</section>
-
-<section id="scores-section" style="display:none">
-  <h2>Scores</h2>
-  <div id="tricks-taken"></div>
-  <table id="scores-table">
-    <thead><tr><th>Round</th><th>Team 1</th><th>Team 2</th></tr></thead>
-    <tbody></tbody>
-  </table>
-</section>
-
-<p id="game-message"></p>
+  <p id="game-message"></p>
+</div>
 
 <script>
   const GAME_ID = <%= gameId %>;
   const MY_USER_ID = <%= user.id %>;
+  let playInFlight = false;
 
   function setMessage(msg) {
     document.getElementById("game-message").textContent = msg;
@@ -57,97 +83,181 @@
   function renderPlayers(players, currentPlayerId) {
     const list = document.getElementById("players-list");
     list.innerHTML = "";
+
     players.forEach(function(p) {
       const li = document.createElement("li");
-      const marker = p.user_id === currentPlayerId ? " ◀ current turn" : "";
-      li.textContent = p.username + " (seat " + p.seat_position + ", team " + p.team_number + ")" + marker;
+
+      if (p.user_id === currentPlayerId) {
+        li.classList.add("current");
+      }
+
+      li.textContent =
+        p.username +
+        " · Seat " +
+        p.seat_position +
+        " · Team " +
+        p.team_number +
+        (p.user_id === currentPlayerId ? " · Current turn" : "");
+
       list.appendChild(li);
     });
   }
 
+  function renderTablePlayers(players, currentPlayerId) {
+    const container = document.getElementById("table-players");
+    const tableMessage = document.getElementById("table-message-text");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    players.forEach(function(p) {
+      const div = document.createElement("div");
+      div.className = "table-player seat-" + p.seat_position;
+
+      if (p.user_id === currentPlayerId) {
+        div.classList.add("current");
+      }
+
+      div.textContent =
+        p.username +
+        " · Team " +
+        p.team_number +
+        (p.user_id === currentPlayerId ? " · Turn" : "");
+
+      container.appendChild(div);
+    });
+
+    if (tableMessage) {
+      tableMessage.textContent =
+        players.length < 4
+          ? "Waiting for players to join."
+          : "Bid, play, and win tricks.";
+    }
+  }
+
   function renderHand(cards, isMyTurn, gameStatus) {
-    var hand = document.getElementById("hand");
+    const hand = document.getElementById("hand");
     hand.innerHTML = "";
+
     if (cards.length === 0) {
       hand.textContent = "No cards remaining.";
       return;
     }
+
+    const suitSymbols = {
+      hearts: "♥",
+      diamonds: "♦",
+      clubs: "♣",
+      spades: "♠"
+    };
+
     cards.forEach(function(card) {
-      var btn = document.createElement("button");
-      btn.textContent = card.rank + " of " + card.suit;
+      const btn = document.createElement("button");
+      const suit = String(card.suit).toLowerCase();
+      const symbol = suitSymbols[suit] || card.suit;
+
+      btn.innerHTML = `
+        <div>${card.rank}</div>
+        <div>${symbol}</div>
+      `;
+
+      if (suit === "hearts" || suit === "diamonds") {
+        btn.style.color = "#ef4444";
+      } else {
+        btn.style.color = "#111827";
+      }
+
       btn.dataset.cardId = card.id;
-      btn.disabled = !isMyTurn || gameStatus !== "playing";
+      btn.disabled = !isMyTurn || playInFlight || gameStatus !== "playing";
+
       btn.addEventListener("click", function() {
         playCard(card.id);
       });
+
       hand.appendChild(btn);
     });
   }
 
   function renderBids(bids, isMyTurn, allBidsIn) {
-    var display = document.getElementById("bids-display");
+    const display = document.getElementById("bids-display");
     display.innerHTML = "";
-    if (bids.length === 0) {
+
+    if (!bids || bids.length === 0) {
       display.textContent = "No bids placed yet.";
     } else {
       bids.forEach(function(b) {
-        var p = document.createElement("p");
+        const p = document.createElement("p");
         p.textContent = b.username + " bid " + b.bid_amount;
         display.appendChild(p);
       });
     }
 
-    var controls = document.getElementById("bid-controls");
-    if (isMyTurn && !allBidsIn) {
-      controls.style.display = "block";
-    } else {
-      controls.style.display = "none";
-    }
+    const controls = document.getElementById("bid-controls");
+    controls.style.display = isMyTurn && !allBidsIn ? "flex" : "none";
   }
 
   function renderCurrentTrick(trickCards) {
-    var container = document.getElementById("current-trick");
+    const container = document.getElementById("current-trick");
     container.innerHTML = "";
-    if (trickCards.length === 0) {
+
+    if (!trickCards || trickCards.length === 0) {
       container.textContent = "No cards played yet this trick.";
       return;
     }
+
     trickCards.forEach(function(tc) {
-      var span = document.createElement("span");
-      span.textContent = tc.username + ": " + tc.rank + " of " + tc.suit + "  ";
-      span.style.marginRight = "16px";
+      const span = document.createElement("span");
+      span.textContent = tc.username + ": " + tc.rank + " of " + tc.suit;
       container.appendChild(span);
     });
   }
 
   function renderScores(scores, tricksTaken) {
-    var tbody = document.getElementById("scores-table").querySelector("tbody");
+    const tbody = document.getElementById("scores-table").querySelector("tbody");
     tbody.innerHTML = "";
-    var byRound = {};
-    scores.forEach(function(s) {
-      if (!byRound[s.round_number]) byRound[s.round_number] = {};
-      byRound[s.round_number]["team" + s.team_number] = s;
-    });
+
+    const byRound = {};
+
+    if (scores) {
+      scores.forEach(function(s) {
+        if (!byRound[s.round_number]) {
+          byRound[s.round_number] = {};
+        }
+
+        byRound[s.round_number]["team" + s.team_number] = s;
+      });
+    }
+
     Object.keys(byRound).forEach(function(round) {
-      var tr = document.createElement("tr");
-      var r = byRound[round];
-      var td1 = document.createElement("td");
+      const tr = document.createElement("tr");
+      const r = byRound[round];
+
+      const td1 = document.createElement("td");
       td1.textContent = round;
-      var td2 = document.createElement("td");
-      td2.textContent = r.team1 ? r.team1.round_score + " (bid " + r.team1.team_bid + ", won " + r.team1.tricks_won + ")" : "-";
-      var td3 = document.createElement("td");
-      td3.textContent = r.team2 ? r.team2.round_score + " (bid " + r.team2.team_bid + ", won " + r.team2.tricks_won + ")" : "-";
+
+      const td2 = document.createElement("td");
+      td2.textContent = r.team1
+        ? r.team1.round_score + " (bid " + r.team1.team_bid + ", won " + r.team1.tricks_won + ")"
+        : "-";
+
+      const td3 = document.createElement("td");
+      td3.textContent = r.team2
+        ? r.team2.round_score + " (bid " + r.team2.team_bid + ", won " + r.team2.tricks_won + ")"
+        : "-";
+
       tr.appendChild(td1);
       tr.appendChild(td2);
       tr.appendChild(td3);
       tbody.appendChild(tr);
     });
 
-    var taken = document.getElementById("tricks-taken");
+    const taken = document.getElementById("tricks-taken");
     taken.innerHTML = "";
+
     if (tricksTaken && tricksTaken.length > 0) {
       tricksTaken.forEach(function(tt) {
-        var p = document.createElement("p");
+        const p = document.createElement("p");
         p.textContent = "Team " + tt.team_number + ": " + tt.tricks_won + " tricks won this round";
         taken.appendChild(p);
       });
@@ -155,26 +265,34 @@
   }
 
   async function loadState() {
-    var res = await fetch("/api/games/" + GAME_ID + "/state");
-    if (!res.ok) { setMessage("Failed to load game state."); return; }
-    var data = await res.json();
-    var game = data.game;
-    var players = data.players;
-    var myCards = data.myCards;
-    var bids = data.bids;
-    var currentTrickCards = data.currentTrickCards;
-    var scores = data.scores;
-    var tricksTaken = data.tricksTaken;
+    const res = await fetch("/api/games/" + GAME_ID + "/state");
 
-    var isMyTurn = game.current_player_id === MY_USER_ID;
+    if (!res.ok) {
+      setMessage("Failed to load game state.");
+      return;
+    }
+
+    const data = await res.json();
+    const game = data.game;
+    const players = data.players;
+    const myCards = data.myCards;
+    const bids = data.bids;
+    const currentTrickCards = data.currentTrickCards;
+    const scores = data.scores;
+    const tricksTaken = data.tricksTaken;
+
+    const isMyTurn = game.current_player_id === MY_USER_ID;
 
     document.getElementById("status-text").textContent =
-      "Status: " + game.status +
-      (game.status === "playing" ? " | Round " + game.current_round + " | Trick " + game.current_trick : "");
+      "Status: " +
+      game.status +
+      (game.status === "playing"
+        ? " · Round " + game.current_round + " · Trick " + game.current_trick
+        : "");
 
     renderPlayers(players, game.current_player_id);
+    renderTablePlayers(players, game.current_player_id);
 
-    // Hide all phase sections first
     document.getElementById("waiting-controls").style.display = "none";
     document.getElementById("bidding-section").style.display = "none";
     document.getElementById("hand-section").style.display = "none";
@@ -183,97 +301,149 @@
 
     if (game.status === "waiting") {
       document.getElementById("waiting-controls").style.display = "block";
-      setMessage("Waiting for 4 players to join...");
+      setMessage("Waiting for 4 players to join.");
+      return;
+    }
 
-    } else if (game.status === "bidding") {
+    if (game.status === "bidding") {
       document.getElementById("bidding-section").style.display = "block";
       document.getElementById("hand-section").style.display = "block";
+
       renderHand(myCards, false, game.status);
       renderBids(bids, isMyTurn, false);
+
       if (isMyTurn) {
-        setMessage("It's your turn to bid!");
+        setMessage("It's your turn to bid.");
       } else {
-        setMessage("Waiting for other players to bid...");
+        setMessage("Waiting for other players to bid.");
       }
 
-    } else if (game.status === "playing") {
+      return;
+    }
+
+    if (game.status === "playing") {
       document.getElementById("hand-section").style.display = "block";
       document.getElementById("trick-section").style.display = "block";
       document.getElementById("scores-section").style.display = "block";
+      document.getElementById("bidding-section").style.display = "block";
+      document.getElementById("bid-controls").style.display = "none";
+
       renderHand(myCards, isMyTurn, game.status);
       renderCurrentTrick(currentTrickCards);
       renderScores(scores, tricksTaken);
       renderBids(bids, false, true);
-      document.getElementById("bidding-section").style.display = "block";
-      document.getElementById("bid-controls").style.display = "none";
+
       if (isMyTurn) {
-        setMessage("It's your turn! Play a card." + (game.lead_suit ? " Lead suit: " + game.lead_suit : " You lead this trick."));
+        setMessage(
+          "It's your turn. Play a card." +
+          (game.lead_suit ? " Lead suit: " + game.lead_suit + "." : " You lead this trick.")
+        );
       } else {
-        setMessage("Waiting for another player..." + (game.lead_suit ? " Lead suit: " + game.lead_suit : ""));
+        setMessage(
+          "Waiting for another player." +
+          (game.lead_suit ? " Lead suit: " + game.lead_suit + "." : "")
+        );
       }
 
-    } else if (game.status === "finished") {
+      return;
+    }
+
+    if (game.status === "finished") {
       document.getElementById("scores-section").style.display = "block";
       document.getElementById("bidding-section").style.display = "block";
       document.getElementById("bid-controls").style.display = "none";
+
       renderBids(bids, false, true);
       renderScores(scores, tricksTaken);
-      setMessage("Game over!");
+      setMessage("Game over.");
     }
   }
 
   async function playCard(cardId) {
-    var res = await fetch("/api/games/" + GAME_ID + "/play", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cardId: cardId }),
-    });
-    if (!res.ok) {
-      var err = await res.json();
-      setMessage(err.error || "Failed to play card.");
-    } else {
+    if (playInFlight) return;
+
+    playInFlight = true;
+
+    try {
+      const res = await fetch("/api/games/" + GAME_ID + "/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId: cardId }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        setMessage(err.error || "Failed to play card.");
+        return;
+      }
+
       setMessage("");
+      await loadState();
+    } finally {
+      playInFlight = false;
     }
   }
 
   async function placeBid() {
-    var amount = parseInt(document.getElementById("bid-input").value, 10);
+    const amount = parseInt(document.getElementById("bid-input").value, 10);
+
     if (isNaN(amount) || amount < 0 || amount > 13) {
       setMessage("Bid must be between 0 and 13.");
       return;
     }
-    var res = await fetch("/api/games/" + GAME_ID + "/bid", {
+
+    const res = await fetch("/api/games/" + GAME_ID + "/bid", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount: amount }),
     });
+
     if (!res.ok) {
-      var err = await res.json();
+      const err = await res.json();
       setMessage(err.error || "Failed to place bid.");
-    } else {
-      setMessage("");
+      return;
     }
+
+    setMessage("");
+    await loadState();
   }
 
   document.getElementById("startBtn").addEventListener("click", async function() {
-    var res = await fetch("/api/games/" + GAME_ID + "/start", { method: "POST" });
+    const res = await fetch("/api/games/" + GAME_ID + "/start", { method: "POST" });
+
     if (!res.ok) {
-      var err = await res.json();
+      const err = await res.json();
       setMessage(err.error || "Failed to start game.");
+      return;
     }
+
+    await loadState();
   });
 
   document.getElementById("bidBtn").addEventListener("click", placeBid);
 
-  var source = new EventSource("/api/sse?roomId=" + GAME_ID);
+  const source = new EventSource("/api/sse?roomId=" + GAME_ID);
 
   source.addEventListener("state-update", function(event) {
-    var data;
-    try { data = JSON.parse(event.data); } catch(e) { return; }
+    let data;
 
-    if (["player_joined", "game_started", "card_played",
-         "bid_placed", "bidding_complete", "trick_completed",
-         "round_completed"].indexOf(data.type) !== -1) {
+    try {
+      data = JSON.parse(event.data);
+    } catch(e) {
+      return;
+    }
+
+    if (
+      [
+        "player_joined",
+        "game_started",
+        "card_played",
+        "bid_placed",
+        "bidding_complete",
+        "trick_completed",
+        "round_completed"
+      ].indexOf(data.type) !== -1
+    ) {
       loadState();
     }
   });

@@ -1,22 +1,38 @@
 <%- include("../partials/header", { title, currentUserId }) %>
 
-<h1>Create Account</h1>
-<p>Register with your email and password.</p>
+<section class="auth-card">
+  <div class="auth-hero">
+    <div class="spade-mark">♠</div>
+    <h1>Join the Table</h1>
+    <p>Create an account and start playing Spades with your group.</p>
+  </div>
 
-<% if (error) { %>
-  <p class="error-msg"><%= error %></p>
-<% } %>
+  <div class="auth-panel">
+    <h2>Create Account</h2>
+    <p class="muted-text">Register with your email and password.</p>
 
-<form action="/auth/register" method="POST" class="auth-form">
-  <label for="email">Email</label>
-  <input id="email" name="email" type="email" required value="<%= email || '' %>" />
+    <% if (error) { %>
+      <p class="error-msg"><%= error %></p>
+    <% } %>
 
-  <label for="password">Password</label>
-  <input id="password" name="password" type="password" minlength="6" required />
+    <form action="/auth/register" method="POST" class="auth-form">
+      <label for="email">Email</label>
+      <div class="input-wrap">
+        <span>✉️</span>
+        <input id="email" name="email" type="email" required value="<%= email || '' %>" placeholder="Enter your email" />
+      </div>
 
-  <button type="submit">Register</button>
-</form>
+      <label for="password">Password</label>
+      <div class="input-wrap">
+        <span>🔒</span>
+        <input id="password" name="password" type="password" minlength="6" required placeholder="Create a password" />
+      </div>
 
-<p class="switch-link">Already have an account? <a href="/auth/login">Log in</a>.</p>
+      <button type="submit">Register</button>
+    </form>
+
+    <p class="switch-link">Already have an account? <a href="/auth/login">Log in</a>.</p>
+  </div>
+</section>
 
 <%- include("../partials/footer") %>

@@ -4,9 +4,9 @@
 <p class="muted-text">Welcome, <%= user.username %>! Create or join a game below.</p>
 
 <ul class="info-list">
-  <li><strong>User ID:</strong> <%= user.id %></li>
-  <li><strong>Email:</strong> <%= user.email %></li>
-  <li><strong>Member since:</strong> <%= user.created_at.toISOString() %></li>
+  <li>👤 <strong><%= user.id %></strong></li>
+  <li>✉️ <%= user.email %></li>
+  <li>📅 <%= user.created_at.toISOString().split("T")[0] %></li>
 </ul>
 
 <h2>Games</h2>

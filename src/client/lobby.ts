@@ -17,7 +17,7 @@ const store = {
     const nameEl = clone.querySelector(".name");
     if (nameEl) {
       const btn = document.createElement("button");
-      btn.textContent = `Game #${String(gameId)} — Join`;
+      btn.textContent = `Join Game #${String(gameId)}`;
       btn.addEventListener("click", () => {
         void fetch(`/api/games/${String(gameId)}/join`, { method: "POST" }).then(() => {
           window.location.href = `/game/${String(gameId)}`;
